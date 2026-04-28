@@ -3,7 +3,7 @@
 import requests
 import json
 import re
-from private_keys import api_key
+from scripts.private_keys import api_key
 
 CATEGORIES = [
     "groceries", "restaurant", "transport", "shopping",

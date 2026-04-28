@@ -1,5 +1,5 @@
 import mysql.connector
-from private_keys import db_user,db_password
+from scripts.private_keys import db_user,db_password
 import pandas as pd
 
 
@@ -122,8 +122,6 @@ def update_spending_categories():
   Expenses_Tracker_DB.commit()
   Expenses_Tracker_DB.close()
 
-import pandas as pd
-
 # Takes a Dataframe and adds it to the spending table. (made for the expenses_df)
 def insert_spending(expense_df):
     Expenses_Tracker_DB = connect_db("expenses_db")
@@ -158,3 +156,22 @@ def insert_spending(expense_df):
     Expenses_Tracker_DB.commit()
     cursor.close()
     Expenses_Tracker_DB.close()
+
+# Takes merchant name and category and replaces them in the merchants DB
+def update_merchant(name,category):
+  Expenses_Tracker_DB = connect_db("expenses_db")
+  mycursor = Expenses_Tracker_DB.cursor()
+
+  name=name.lower()
+  category=category.lower()
+
+  mycursor.execute("""
+  UPDATE merchants m
+  SET m.category = %s
+  WHERE m.name = %s
+  """, (category,name))
+
+  print(f"Updated Merchants table:\n{name} added to {category}")
+
+  Expenses_Tracker_DB.commit()
+  Expenses_Tracker_DB.close()
