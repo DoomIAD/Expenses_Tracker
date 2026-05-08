@@ -65,5 +65,6 @@ Using the merchant table, the main spending table is updated. The merchant table
 | Pandas | Data processing |
 | MySQL | Local storage |
 | OpenAI API / Open Router | AI categorization of merchants |
+| Flask | GUI |
 
 ---
