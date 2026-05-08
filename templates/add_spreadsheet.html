@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Spreadsheet</title>
+
+  <!--Some default styles from my template-->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #2563eb;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    main {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .primary-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .secondary-btn {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .secondary-btn:hover {
+      background: #d1d5db;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    #success {
+            display: none;
+            margin-top: 10px;
+            color: blue;
+            font-size: 20px;
+        }
+  </style>
+</head>
+
+<body>
+  <!--Page Header-->
+  <header>
+    <h1>Add a New Spreadsheet</h1>
+    <p>Ensure the sheet is public!</p>
+  </header>
+
+  <!--Form-->
+  <main>
+
+    <h2>New Spreadsheet</h2>
+
+    <form action="/add_spreadsheet" method="POST">
+      <div class="form-group">
+        <label for="url">URL</label>
+        <input
+          type="text"
+          id="url"
+          name="url"
+          placeholder="https://docs.google.com/spreadsheets/xxxxxxxx"
+          required
+        >
+      </div>
+
+      <!--Text appears if sheet_import() was a success-->
+      <p id="success"
+        style="display: {% if success %}block{% else %}none{% endif %};
+                color: green;">
+        Spreadsheet imported successfully!
+      </p>
+
+      <!--Text appears if failed-->
+      <p id="failure"
+        style="display: {% if failure %}block{% else %}none{% endif %};
+                color: red;">
+        Failed to import spreadsheet!
+      </p>
+
+      <!--The basic buttons-->
+      <div class="button-row">
+        <button class="primary-btn" type="submit">
+          Submit
+        </button>
+
+        <button class="secondary-btn" type="button" onclick="goBack()">
+          Cancel
+        </button>   
+      </div>
+
+    </form>
+  </main>
+
+  <script>
+    // After a success is recieved, go back to home page after 2sec
+    {% if success %}
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+    {% endif %}
+    function goBack() {
+      document.getElementById("url").value = "";
+      window.location.href = "/";
+    }
+  </script>
+
+</body>
+</html>
