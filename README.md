@@ -35,7 +35,7 @@ The application pulls transaction data directly from Google Sheets and uses AI-a
 ### 🚧 In Development
 - Budget functionality
 - Visualization of spending
-- GUI 
+- GUI
 
 ---
 
@@ -66,5 +66,6 @@ Using the merchant table, the main spending table is updated. The merchant table
 | MySQL | Local storage |
 | OpenAI API / Open Router | AI categorization of merchants |
 | Flask | GUI |
+| Javascript | html logic |
 
 ---
