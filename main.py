@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
-
 from scripts.sheet_importer import sheet_import
+from scripts.database_logic import *
 
 app = Flask(__name__)
 
@@ -34,9 +34,35 @@ def add_spreadsheet():
 
 
 # Modify Merchants
-@app.route('/edit_merchants')
+@app.route('/edit_merchants', methods=["GET", "POST"])
 def edit_merchants():
-    return render_template("edit_merchants.html")
+    success = False
+    failure = False
+
+    # Takes the input of the dropdowns
+    if request.method == "POST":
+        try:
+            for merchant, category in request.form.items():
+                update_merchant(merchant, category)
+            update_spending_categories()
+            success = True
+        except Exception as e:
+            print("Error:", e)
+            failure = True
+
+
+    # Passes the merchant table as a variable to the html
+    # print_table("merchants")
+    merchant_table = export_table("merchants")
+    print_table("merchants")
+    
+    # Start 'er up
+    return render_template(
+        "edit_merchants.html",
+        merchant_table=merchant_table,
+        success=success,
+        failure=failure
+    )
 
 # Spending visualizations
 @app.route('/about')

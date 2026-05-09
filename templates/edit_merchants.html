@@ -3,3 +3,218 @@
  - Show all merchants and categories with categories as dropdown menus
  - After a dropdown menu is changed, update the SQL table with update_merchant()
 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
+
+  <!--Some default styles from my template-->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #2563eb;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    main {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .primary-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .secondary-btn {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .secondary-btn:hover {
+      background: #d1d5db;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+<!--Page Header-->
+  <header>
+    <h1>Expense Tracker</h1>
+    <p>An easy way to visualize your Google Sheet expenses!</p>
+  </header>
+
+  <main>
+
+    <h2>Merchants</h2>
+
+    <form method="POST">
+    <div class="form-group">
+      <!--List of merchants with category drop-downs-->
+        <ul>
+            {% for merchant, category in merchant_table %}
+                <li>
+                    {{ merchant }}:
+
+                    <!--Makes a drop down menu that is autofilled with correct categories-->
+                    <select id="{{ merchant }}" name="{{ merchant }}">
+                      <option value="groceries" 
+                        {% if category == "groceries" %}selected{% endif %}>
+                        groceries
+                      </option>
+                      <option value="restaurant"
+                        {% if category == "restaurant" %}selected{% endif %}>
+                        restaurant
+                      </option>
+                      <option value="transport"
+                        {% if category == "transport" %}selected{% endif %}>
+                        transport
+                      </option>
+                      <option value="shopping"
+                        {% if category == "shopping" %}selected{% endif %}>
+                        shopping
+                      </option>
+                      <option value="entertainment"
+                        {% if category == "entertainment" %}selected{% endif %}>
+                        entertainment
+                      </option>
+                      <option value="utilities"
+                        {% if category == "utilities" %}selected{% endif %}>
+                        utilities
+                      </option>
+                      <option value="subscriptions"
+                        {% if category == "subscriptions" %}selected{% endif %}>
+                        subscriptions
+                      </option>
+                      <option value="health"
+                        {% if category == "health" %}selected{% endif %}>
+                        health
+                      </option>
+                      <option value="travel"
+                        {% if category == "travel" %}selected{% endif %}>
+                        travel
+                      </option>
+                      <option value="other"
+                        {% if category == "other" %}selected{% endif %}>
+                        other
+                    </option>
+                  </select>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!--Text appears if sheet_import() was a success-->
+    <p id="success"
+      style="display: {% if success %}block{% else %}none{% endif %};
+              color: green;">
+       Merchant categories updated successfully!
+    </p>
+
+    <!--Text appears if failed-->
+    <p id="failure"
+      style="display: {% if failure %}block{% else %}none{% endif %};
+              color: red;">
+      Failed to update merchant categories
+    </p>
+
+    <!--The basic buttons-->
+    <div class="button-row">
+      <button class="primary-btn" type="submit">
+        Submit
+      </button>
+
+      <button class="secondary-btn" type="button" onclick="goBack()">
+        Cancel
+      </button>   
+    </div>
+    </form>
+  </main>
+
+  <script>
+    // After a success is recieved, go back to home page after 2sec
+    {% if success %}
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+    {% endif %}
+
+    // Goes back to the main screen
+    function goBack() {
+      document.getElementById("url").value = "";
+      window.location.href = "/";
+    }
+  </script>
+
+</body>
+</html>

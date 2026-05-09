@@ -175,3 +175,17 @@ def update_merchant(name,category):
 
   Expenses_Tracker_DB.commit()
   Expenses_Tracker_DB.close()
+
+# Exports the table into a list
+def export_table(table_name):
+    Expenses_Tracker_DB = connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
+
+    cursor.execute("""
+                   SELECT DISTINCT merchant, category 
+                   FROM spending
+    """)
+    rows = cursor.fetchall()
+
+    data = [(str(merchant), str(category)) for merchant, category in rows]
+    return data
