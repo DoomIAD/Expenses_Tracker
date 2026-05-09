@@ -3,3 +3,147 @@ TODO
 - Show category expenses
 - Show Pie Chart of expenses
 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
+
+  <!--Some default styles from my template-->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #2563eb;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    main {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .primary-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .secondary-btn {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .secondary-btn:hover {
+      background: #d1d5db;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+<!--Page Header-->
+  <header>
+    <h1>Expense Tracker</h1>
+    <p>An easy way to visualize your Google Sheet expenses!</p>
+  </header>
+
+  <main>
+
+    <h2>Expenses</h2>
+
+    <form method="POST">
+    <div class="form-group">
+      <!--List of merchants with category drop-downs-->
+        <ul>
+            {% for merchant, category in merchant_table %}
+                <p>
+                    {{ merchant }}: {{ category }}
+                </p>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!--The basic buttons-->
+      <button class="secondary-btn" type="button" onclick="goBack()">
+        Back
+      </button>   
+    </div>
+    </form>
+  </main>
+
+  <script>
+    // Goes back to the main screen
+    function goBack() {
+      window.location.href = "/";
+    }
+  </script>
+
+</body>
+</html>

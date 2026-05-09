@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for
 from scripts.sheet_importer import sheet_import
 from scripts.database_logic import *
+import matplotlib.pyplot as plt
+import io
+import base64
 
 app = Flask(__name__)
 
@@ -53,7 +56,7 @@ def edit_merchants():
 
     # Passes the merchant table as a variable to the html
     # print_table("merchants")
-    merchant_table = export_table("merchants")
+    merchant_table = export_merchant_table()
     print_table("merchants")
     
     # Start 'er up
@@ -65,9 +68,45 @@ def edit_merchants():
     )
 
 # Spending visualizations
-@app.route('/about')
-def about():
-    return render_template("about.html")
+@app.route('/expenditures')
+def expenditures():
+    # Passes the merchant table as a variable to the html
+    # print_table("merchants")
+    merchant_table = export_merchant_table()
+    print_table("merchants")
+    print_table("spending")
+    
+    # Export total sums of individual categories
+    categories_total = category_total()
+    print(categories_total)
+    """
+        # Create pie chart
+        fig, ax = plt.subplots()
+        ax.pie(
+            spent,
+            labels=category,
+            autopct="%1.1f%%",
+            startangle=90
+        )
+
+        ax.axis("equal")
+        ax.set_title("Spending")
+
+        img = io.BytesIO()
+        fig.savefig(img, format="png", bbox_inches="tight")
+        img.seek(0)
+
+        pie_chart = base64.b64encode(img.getvalue()).decode("utf-8")
+
+        plt.close(fig)
+
+    """
+    # Start 'er up
+    return render_template(
+        "expenditures.html",
+        merchant_table=merchant_table,
+        #pie_chart=pie_chart,
+    )
 
 # Run the Flask app
 if __name__ == "__main__":

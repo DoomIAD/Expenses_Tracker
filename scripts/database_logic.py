@@ -177,15 +177,31 @@ def update_merchant(name,category):
   Expenses_Tracker_DB.close()
 
 # Exports the table into a list
-def export_table(table_name):
+def export_merchant_table():
     Expenses_Tracker_DB = connect_db("expenses_db")
     cursor = Expenses_Tracker_DB.cursor()
 
     cursor.execute("""
-                   SELECT DISTINCT merchant, category 
-                   FROM spending
+                   SELECT DISTINCT name, category 
+                   FROM merchants
+                   ORDER BY name ASC
     """)
     rows = cursor.fetchall()
 
     data = [(str(merchant), str(category)) for merchant, category in rows]
     return data
+
+# Export category total
+def category_total():
+    Expenses_Tracker_DB = connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
+
+    cursor.execute("""
+                   SELECT category, SUM(amount)
+                   FROM spending
+                   GROUP BY category
+                   ORDER BY SUM(amount) DESC
+    """)
+    rows = cursor.fetchall()
+
+    return rows
