@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 from scripts.sheet_importer import sheet_import
 from scripts.database_logic import *
+import matplotlib
+matplotlib.use("Agg") # Fixes thread error
 import matplotlib.pyplot as plt
 import io
 import base64
@@ -15,6 +17,7 @@ def home():
 # New Google Sheet
 @app.route("/add_spreadsheet", methods=["GET", "POST"])
 def add_spreadsheet():
+    remove_duplicates()
     success = False
     failure = False
 
@@ -70,42 +73,56 @@ def edit_merchants():
 # Spending visualizations
 @app.route('/expenditures')
 def expenditures():
+    # Ensures data is clean before taking action
+    remove_duplicates()
+
     # Passes the merchant table as a variable to the html
     # print_table("merchants")
     merchant_table = export_merchant_table()
-    print_table("merchants")
-    print_table("spending")
     
     # Export total sums of individual categories
     categories_total = category_total()
-    print(categories_total)
-    """
-        # Create pie chart
-        fig, ax = plt.subplots()
-        ax.pie(
-            spent,
-            labels=category,
-            autopct="%1.1f%%",
-            startangle=90
-        )
 
-        ax.axis("equal")
-        ax.set_title("Spending")
+    # Empty lists to store for pie chart
+    categories_list=[]
+    total_list=[]
 
-        img = io.BytesIO()
-        fig.savefig(img, format="png", bbox_inches="tight")
-        img.seek(0)
 
-        pie_chart = base64.b64encode(img.getvalue()).decode("utf-8")
+    for i in range(len(categories_total)):
+        category,total=categories_total[i]
+        categories_list.append(category)
+        total_list.append(round(abs(total),2))
+    categories_total = list(zip(categories_list, total_list))
+    categories_total.sort(key=lambda x: x[1], reverse=True)
 
-        plt.close(fig)
 
-    """
+    # Create pie chart
+    fig, ax = plt.subplots()
+    ax.pie(
+        total_list,
+        labels=categories_list,
+        autopct="%1.1f%%",
+        startangle=90
+    )
+
+    ax.axis("equal")
+    ax.set_title("Spending")
+
+    # Make it a usable image for html
+    img = io.BytesIO()
+    fig.savefig(img, format="png", bbox_inches="tight")
+    img.seek(0)
+    pie_chart = base64.b64encode(img.getvalue()).decode("utf-8")
+    plt.close(fig)
+
+    print_table("spending")
+
+
     # Start 'er up
     return render_template(
         "expenditures.html",
-        merchant_table=merchant_table,
-        #pie_chart=pie_chart,
+        categories_total=categories_total,
+        pie_chart=pie_chart,
     )
 
 # Run the Flask app

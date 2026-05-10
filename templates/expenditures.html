@@ -120,11 +120,22 @@ TODO
 
     <form method="POST">
     <div class="form-group">
-      <!--List of merchants with category drop-downs-->
+        <!--Visualization of spending via pie chart-->
+        {% if pie_chart %}
+          <img
+            src="data:image/png;base64,{{ pie_chart }}"
+            alt="Spending pie chart"
+            style="max-width: 500px; width: 100%; height: auto;"
+          >
+        {% else %}
+          <p>No spending data available.</p>
+        {% endif %}
+
+        <!--List of categories and costs-->
         <ul>
-            {% for merchant, category in merchant_table %}
+            {% for category, amount in categories_total %}
                 <p>
-                    {{ merchant }}: {{ category }}
+                    {{ category }}: ${{ amount }}
                 </p>
             {% endfor %}
         </ul>

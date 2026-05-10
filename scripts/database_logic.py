@@ -2,92 +2,109 @@ import mysql.connector
 from scripts.private_keys import db_user,db_password
 import pandas as pd
 
-
+#=========================================================================
 
 # Startup creation of the DB
 def Create_DB():
-  mydb = mysql.connector.connect(
-      host="localhost",
-      port=8013,
-      user=db_user,
-      password=db_password
-  )
-  mycursor = mydb.cursor()
-  mycursor.execute("CREATE DATABASE IF NOT EXISTS expenses_db")
-  mydb.commit()
-  mydb.close()
-
-# connects to DB
-def connect_db(db=None):
-  return mysql.connector.connect(
+    mydb = mysql.connector.connect(
         host="localhost",
         port=8013,
         user=db_user,
-        password=db_password,
-        database=db
-  )
+        password=db_password
+    )
+    mycursor = mydb.cursor()
+
+    mycursor.execute("CREATE DATABASE IF NOT EXISTS expenses_db")
+
+    mydb.commit()
+    mycursor.close()
+    mydb.close()
+
+# connects to DB
+def connect_db(db=None):
+    return mysql.connector.connect(
+          host="localhost",
+          port=8013,
+          user=db_user,
+          password=db_password,
+          database=db
+    )
 
 # Startup creation of the merchant table
 def Create_Merchant_Table():
-  Expenses_Tracker_DB=connect_db("expenses_db")
-  mycursor = Expenses_Tracker_DB.cursor()
+    Expenses_Tracker_DB=connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
 
-  mycursor.execute("""
-  CREATE TABLE IF NOT EXISTS merchants(
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255),
-    category VARCHAR(255)
-  )
-  """)
-  Expenses_Tracker_DB.commit()
-  Expenses_Tracker_DB.close()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS merchants(
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255),
+      category VARCHAR(255)
+    )
+    """)
+
+    Expenses_Tracker_DB.commit()
+    cursor.close()
+    Expenses_Tracker_DB.close()
 
 # Startup Creation of spending table
 def Create_Spending_Table():
-  Expenses_Tracker_DB=connect_db("expenses_db")
-  mycursor = Expenses_Tracker_DB.cursor()
+    Expenses_Tracker_DB=connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
 
-  mycursor.execute("""
-  CREATE TABLE IF NOT EXISTS spending (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      card_number VARCHAR(255),
-      date DATE,
-      amount FLOAT,
-      merchant VARCHAR(255),
-      category VARCHAR(255)
-  )
-  """)
-  Expenses_Tracker_DB.commit()
-  Expenses_Tracker_DB.close()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS spending (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        card_number VARCHAR(255),
+        date DATE,
+        amount FLOAT,
+        merchant VARCHAR(255),
+        category VARCHAR(255)
+    )
+    """)
+
+    Expenses_Tracker_DB.commit()
+    cursor.close()
+    Expenses_Tracker_DB.close()
 
 # Adds a merchant to the merchants table
 def insert_merchant(name,category):
-  Expenses_Tracker_DB=connect_db("expenses_db")
-  mycursor = Expenses_Tracker_DB.cursor()
-  sql = "INSERT INTO merchants (name, category) VALUES (%s, %s)"
-  val = (name, category)
-  mycursor.execute(sql, val)
-  Expenses_Tracker_DB.commit()
-  Expenses_Tracker_DB.close()
+    Expenses_Tracker_DB=connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
 
-# Checks if a merchant is already listed in the merchants table
+    sql = """
+      INSERT INTO merchants (name, category) VALUES (%s, %s)
+    """
+    val = (name, category)
+    cursor.execute(sql, val)
+
+    Expenses_Tracker_DB.commit()
+    cursor.close()
+    Expenses_Tracker_DB.close()
+
+  # Checks if a merchant is already listed in the merchants table
 def merchant_checker(merchant_list):
-  Expenses_Tracker_DB=connect_db("expenses_db")
-  mycursor = Expenses_Tracker_DB.cursor()
-  mycursor.execute("SELECT name FROM merchants")
-  myresult = mycursor.fetchall()
+      Expenses_Tracker_DB=connect_db("expenses_db")
+      cursor = Expenses_Tracker_DB.cursor()
 
-  existing_merchants = {
-        row[0].strip().lower() for row in myresult if row[0] is not None
-    }
+      cursor.execute("""
+      SELECT DISTINCT name 
+      FROM merchants
+      """)
+      myresult = cursor.fetchall()
 
-  missing_merchants = [
-        m for m in merchant_list
-        if m.strip().lower() not in existing_merchants
-  ]
+      existing_merchants = {
+            row[0].strip().lower() for row in myresult if row[0] is not None
+        }
 
-  Expenses_Tracker_DB.close()
-  return missing_merchants
+      missing_merchants = [
+            m for m in merchant_list
+            if m.strip().lower() not in existing_merchants
+      ]
+
+      cursor.close()
+      Expenses_Tracker_DB.close()
+      return missing_merchants
 
 # Prints out any existing table
 def print_table(table_name):
@@ -105,22 +122,25 @@ def print_table(table_name):
     for row in rows:
         print(" | ".join(str(value) for value in row))
 
+    Expenses_Tracker_DB.commit()
+    cursor.close()
     Expenses_Tracker_DB.close()
 
 # Takes the spending table and merchants table and updates their categories to fit the merchant based on the merchant table
 def update_spending_categories():
-  Expenses_Tracker_DB = connect_db("expenses_db")
-  mycursor = Expenses_Tracker_DB.cursor()
+    Expenses_Tracker_DB = connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
 
-  mycursor.execute("""
-  UPDATE spending s
-  JOIN merchants m
-      ON s.merchant = m.name
-  SET s.category = m.category
-  """)
+    cursor.execute("""
+    UPDATE spending s
+    JOIN merchants m
+        ON s.merchant = m.name
+    SET s.category = m.category
+    """)
 
-  Expenses_Tracker_DB.commit()
-  Expenses_Tracker_DB.close()
+    Expenses_Tracker_DB.commit()
+    cursor.close()
+    Expenses_Tracker_DB.close()
 
 # Takes a Dataframe and adds it to the spending table. (made for the expenses_df)
 def insert_spending(expense_df):
@@ -159,22 +179,23 @@ def insert_spending(expense_df):
 
 # Takes merchant name and category and replaces them in the merchants DB
 def update_merchant(name,category):
-  Expenses_Tracker_DB = connect_db("expenses_db")
-  mycursor = Expenses_Tracker_DB.cursor()
+    Expenses_Tracker_DB = connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
 
-  name=name.lower()
-  category=category.lower()
+    name=name.lower()
+    category=category.lower()
 
-  mycursor.execute("""
-  UPDATE merchants m
-  SET m.category = %s
-  WHERE m.name = %s
-  """, (category,name))
+    cursor.execute("""
+    UPDATE merchants m
+    SET m.category = %s
+    WHERE m.name = %s
+    """, (category,name))
 
-  print(f"Updated Merchants table:\n{name} added to {category}")
+    print(f"Updated Merchants table:\n{name} added to {category}")
 
-  Expenses_Tracker_DB.commit()
-  Expenses_Tracker_DB.close()
+    Expenses_Tracker_DB.commit()
+    cursor.close()
+    Expenses_Tracker_DB.close()
 
 # Exports the table into a list
 def export_merchant_table():
@@ -189,6 +210,10 @@ def export_merchant_table():
     rows = cursor.fetchall()
 
     data = [(str(merchant), str(category)) for merchant, category in rows]
+
+    cursor.close()
+    Expenses_Tracker_DB.close()
+
     return data
 
 # Export category total
@@ -204,4 +229,40 @@ def category_total():
     """)
     rows = cursor.fetchall()
 
+    cursor.close()
+    Expenses_Tracker_DB.close()
+
     return rows
+    
+
+# Removes duplicate entries from the spending table
+def remove_duplicates():
+    Expenses_Tracker_DB = connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
+
+    cursor.execute("""
+      WITH duplicates AS (
+        SELECT
+          id,
+          ROW_NUMBER() OVER (
+            PARTITION BY
+              card_number,
+              date,
+              amount,
+              merchant
+            ORDER BY id
+          ) AS row_num
+        FROM spending
+      )
+
+      DELETE FROM spending
+      WHERE id IN (
+          SELECT id
+          FROM duplicates
+          WHERE row_num > 1
+      );
+    """)
+
+    Expenses_Tracker_DB.commit()
+    cursor.close()
+    Expenses_Tracker_DB.close()
