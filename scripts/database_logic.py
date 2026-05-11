@@ -49,7 +49,7 @@ def Create_Merchant_Table():
 
 # Startup Creation of spending table
 def Create_Spending_Table():
-    Expenses_Tracker_DB=connect_db("expenses_db")
+    Expenses_Tracker_DB = connect_db("expenses_db")
     cursor = Expenses_Tracker_DB.cursor()
 
     cursor.execute("""
@@ -59,7 +59,16 @@ def Create_Spending_Table():
         date DATE,
         amount FLOAT,
         merchant VARCHAR(255),
-        category VARCHAR(255)
+        category VARCHAR(255),
+
+        -- Ensures no duplicate entries
+        UNIQUE KEY unique_spending (
+            card_number,
+            date,
+            amount,
+            merchant,
+            category
+        )
     )
     """)
 
@@ -153,7 +162,8 @@ def insert_spending(expense_df):
 
     # Insert query
     insert_query = """
-        INSERT INTO spending (card_number, date, amount, merchant, category)
+        INSERT IGNORE INTO spending
+        (card_number, date, amount, merchant, category)
         VALUES (%s, %s, %s, %s, %s)
     """
 
@@ -164,7 +174,7 @@ def insert_spending(expense_df):
             row["Date"],
             row["Amount"],
             row["Merchant"],
-            row.get("category", None)
+            row.get("category") or ""
         )
         for _, row in df.iterrows()
     ]
@@ -236,6 +246,7 @@ def category_total():
     
 
 # Removes duplicate entries from the spending table
+# No longer neccessary after insert and table creation modified to support unique items
 def remove_duplicates():
     Expenses_Tracker_DB = connect_db("expenses_db")
     cursor = Expenses_Tracker_DB.cursor()
