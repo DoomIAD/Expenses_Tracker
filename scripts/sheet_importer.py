@@ -29,18 +29,17 @@ def url_fixer(sheets_url_bad):
 
 
 def sheet_import(sheets_url):
-    # Create my database
+    # Create my database if not already existing
     Create_DB()
     Create_Merchant_Table()
     Create_Spending_Table()
 
-    # import Google Sheet
+    # import Google Sheet (with fixed URL)
     sheets_url=url_fixer(sheets_url)
-
     df = pd.read_csv(sheets_url)
 
     # Fix data types and clean data
-    df['Date'] = pd.to_datetime(df['Date'])
+    df['Date'] = pd.to_datetime(df['Date']).dt.date
     df['Amount'] = df['Amount'].str.replace(',', '').astype(float)
     df['Merchant'] = (
         df['Merchant']
@@ -50,12 +49,15 @@ def sheet_import(sheets_url):
         .str.lower()
     )
 
-    # Seperate data
+    # Seperate data to only read expenses
     filter_ = df['Amount'] < 0
     expense_df = df[filter_]
 
+    columns = expense_df.columns.tolist()
+    rows = expense_df.values.tolist()    
+
     # Add to the Spending DB
-    insert_spending(expense_df)
+    insert_spending(expense_df)    
 
     # Categorize expenses
     unique_merchants = expense_df["Merchant"].unique()
@@ -69,6 +71,12 @@ def sheet_import(sheets_url):
             print("Error for item:",i)
 
     update_spending_categories()
-    print_table("spending")
 
+    # Prints added table items to console for Debugging
+    print(" | ".join(columns))
+    print("-" * 50)
+    for row in rows:
+        print(" | ".join(str(value) for value in row))
 
+    # Returns the addded items
+    return columns,rows

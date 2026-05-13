@@ -35,16 +35,17 @@ def categorize_merchant(name: str) -> str:
             "messages": [
                 {
                     "role": "user",
-                    "content": f"""
-Categorize this merchant into ONE of the following categories:
+                    "content": 
+                    f"""
+                    Categorize this merchant into ONE of the following categories:
 
-{", ".join(CATEGORIES)}
+                    {", ".join(CATEGORIES)}
 
-Merchant: {name}
+                    Merchant: {name}
 
-Return ONLY valid JSON in this format:
-{{ "category": "<category>" }}
-"""
+                    Return ONLY valid JSON in this format:
+                    {{ "category": "<category>" }}
+                    """
                 }
             ],
             "max_tokens": 200

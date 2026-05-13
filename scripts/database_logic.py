@@ -115,7 +115,7 @@ def merchant_checker(merchant_list):
       Expenses_Tracker_DB.close()
       return missing_merchants
 
-# Prints out any existing table
+# Prints out any existing table (Aniqueted)
 def print_table(table_name):
     Expenses_Tracker_DB = connect_db("expenses_db")
     cursor = Expenses_Tracker_DB.cursor()
@@ -134,6 +134,22 @@ def print_table(table_name):
     Expenses_Tracker_DB.commit()
     cursor.close()
     Expenses_Tracker_DB.close()
+
+# Returns a list of collumns and rows
+def get_table(table_name):
+    Expenses_Tracker_DB = connect_db("expenses_db")
+    cursor = Expenses_Tracker_DB.cursor()
+
+    query = f"SELECT * FROM {table_name}"
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    column_names = [desc[0] for desc in cursor.description]
+
+    cursor.close()
+    Expenses_Tracker_DB.close()
+
+    return column_names,rows
 
 # Takes the spending table and merchants table and updates their categories to fit the merchant based on the merchant table
 def update_spending_categories():

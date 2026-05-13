@@ -17,15 +17,16 @@ def home():
 # New Google Sheet
 @app.route("/add_spreadsheet", methods=["GET", "POST"])
 def add_spreadsheet():
-    remove_duplicates()
-    success = False
-    failure = False
+    success,failure = False,False
+    spending_collumn = []
+    spending_row = []
+
 
     # Pulls the URL from the form to be used in sheet_import()
     if request.method == "POST":
         sheet_url = request.form["url"]
         try:
-            sheet_import(sheet_url)
+            spending_collumn,spending_row=sheet_import(sheet_url)
             success = True
         except Exception as e:
             print("Error:", e)
@@ -34,6 +35,8 @@ def add_spreadsheet():
     # Tells the site if success or failure
     return render_template(
         "add_spreadsheet.html",
+        spending_collumn=spending_collumn,
+        spending_row=spending_row,
         success=success,
         failure=failure
     )

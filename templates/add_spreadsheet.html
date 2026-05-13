@@ -106,12 +106,23 @@ TODO
       padding: 20px;
       color: #666;
     }
-    #success {
-            display: none;
-            margin-top: 10px;
-            color: blue;
-            font-size: 20px;
-        }
+    /* Basic Table Class formatting*/
+    .table {
+    border-collapse: collapse;
+    background-color: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
+    }
+
+    .table th,
+    .table td {
+    border: 1px solid rgb(0, 0, 0);
+    padding: 8px;
+    }
+
+    .table th {
+    background-color: #ffffff;
+    }
+    
   </style>
 </head>
 
@@ -139,6 +150,17 @@ TODO
         >
       </div>
 
+      <!--The basic buttons-->
+      <div class="button-row">
+        <button class="primary-btn" type="submit">
+          Submit
+        </button>
+
+        <button class="secondary-btn" type="button" onclick="goBack()">
+          Cancel
+        </button>   
+      </div>
+
       <!--Text appears if sheet_import() was a success-->
       <p id="success"
         style="display: {% if success %}block{% else %}none{% endif %};
@@ -153,27 +175,32 @@ TODO
         Failed to import spreadsheet!
       </p>
 
-      <!--The basic buttons-->
-      <div class="button-row">
-        <button class="primary-btn" type="submit">
-          Submit
-        </button>
+      <!--The chart of imported shheets-->
+      <table id="success" class="table"
+       style="display: {% if success %}block{% else %}none{% endif %};">
+      <thead>
+        <tr>
+          {% for col in spending_collumn %}
+            <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
 
-        <button class="secondary-btn" type="button" onclick="goBack()">
-          Cancel
-        </button>   
-      </div>
+      <tbody>
+        {% for row in spending_row %}
+          <tr>
+            {% for value in row %}
+              <td>{{ value }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
     </form>
   </main>
 
   <script>
-    // After a success is recieved, go back to home page after 2sec
-    {% if success %}
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 2000);
-    {% endif %}
     // Goes back to the main screen
     function goBack() {
       document.getElementById("url").value = "";
