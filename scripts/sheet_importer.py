@@ -27,6 +27,17 @@ def url_fixer(sheets_url_bad):
 
     return sheets_url_good
 
+def merchant_checker(unique_merchants):
+    missing_merchants=merchant_checker(unique_merchants)
+    new_merchants = []
+    for i in missing_merchants:
+        try:
+            category = categorize_merchant(i)
+            new_merchants.append((i, category))
+        except:
+            print("Error for item:",i)
+
+    return new_merchants
 
 def sheet_import(sheets_url):
     # Create my database if not already existing
@@ -51,32 +62,22 @@ def sheet_import(sheets_url):
 
     # Seperate data to only read expenses
     filter_ = df['Amount'] < 0
-    expense_df = df[filter_]
+    expense_df = df[filter_]   
 
-    columns = expense_df.columns.tolist()
-    rows = expense_df.values.tolist()    
-
-    # Add to the Spending DB
-    insert_spending(expense_df)    
-
-    # Categorize expenses
+    # Categorize expenses of new items and add to the Merchant DB if not already existing
     unique_merchants = expense_df["Merchant"].unique()
-    missing_merchants=merchant_checker(unique_merchants)
-
-    for i in missing_merchants:
-        try:
-            category = categorize_merchant(i)
-            insert_merchant(i,category)
-        except:
-            print("Error for item:",i)
-
-    update_spending_categories()
+    incoming_merchants = merchant_checker(unique_merchants)
+    
+    # Exports the Dataframe as a list
+    columns = expense_df.columns.tolist()
+    rows = expense_df.values.tolist()   
 
     # Prints added table items to console for Debugging
+    print("\nIncoming table items:\n")
     print(" | ".join(columns))
     print("-" * 50)
     for row in rows:
         print(" | ".join(str(value) for value in row))
 
-    # Returns the addded items
-    return columns,rows
+    # Returns the incoming items for approval
+    return columns,rows,incoming_merchants

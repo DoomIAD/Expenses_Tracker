@@ -26,7 +26,7 @@ def add_spreadsheet():
     if request.method == "POST":
         sheet_url = request.form["url"]
         try:
-            spending_collumn,spending_row=sheet_import(sheet_url)
+            spending_collumn,spending_row,incoming_merchants=sheet_import(sheet_url)
             success = True
         except Exception as e:
             print("Error:", e)
@@ -41,6 +41,33 @@ def add_spreadsheet():
         failure=failure
     )
 
+# Check incoming merchants before updating the Merchant table
+@app.route('/import_merchants', methods=["GET", "POST"])
+def import_merchants(incoming_merchants=[]):
+    success = False
+    failure = False
+
+    # Takes the input of the dropdowns
+    if request.method == "POST":
+        try:
+            for merchant, category in request.form.items():
+                update_merchant(merchant, category)
+            update_spending_categories()
+            success = True
+        except Exception as e:
+            print("Error:", e)
+            failure = True
+
+    
+    # Start 'er up
+    return render_template(
+        #Uses same HTML, just different values
+        "edit_merchants.html",
+        # Gives incoming merchants from sheet_import() to the html for approval
+        merchant_table=incoming_merchants,
+        success=success,
+        failure=failure
+    )
 
 # Modify Merchants
 @app.route('/edit_merchants', methods=["GET", "POST"])
