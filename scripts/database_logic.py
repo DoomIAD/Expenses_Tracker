@@ -1,5 +1,5 @@
 import mysql.connector
-from scripts.private_keys import db_user,db_password
+from scripts.private_keys import db_user,db_password, db_port
 import pandas as pd
 
 #=========================================================================
@@ -8,7 +8,7 @@ import pandas as pd
 def Create_DB():
     mydb = mysql.connector.connect(
         host="localhost",
-        port=8013,
+        port=db_port,
         user=db_user,
         password=db_password
     )
@@ -24,7 +24,7 @@ def Create_DB():
 def connect_db(db=None):
     return mysql.connector.connect(
           host="localhost",
-          port=8013,
+          port=db_port,
           user=db_user,
           password=db_password,
           database=db
@@ -105,11 +105,15 @@ def merchant_checker(merchant_list):
       existing_merchants = {
             row[0].strip().lower() for row in myresult if row[0] is not None
         }
+      
+      print(f"Existing merchants: {existing_merchants}")
 
       missing_merchants = [
             m for m in merchant_list
             if m.strip().lower() not in existing_merchants
       ]
+
+      print(f"Missing merchants: {missing_merchants}")
 
       cursor.close()
       Expenses_Tracker_DB.close()

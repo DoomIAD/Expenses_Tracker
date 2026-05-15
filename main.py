@@ -1,14 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, session, url_for
 from scripts.sheet_importer import sheet_import
 from scripts.database_logic import *
+from scripts.private_keys import flask_secret_key
 import matplotlib
 matplotlib.use("Agg") # Fixes thread error
 import matplotlib.pyplot as plt
 import io
 import base64
+import uuid
+
+# Lets me store and use data between routes
+IMPORT_STORE = {}
 
 app = Flask(__name__)
-
+app.secret_key = flask_secret_key
 # Home Page
 @app.route('/')
 def home():
@@ -17,22 +22,47 @@ def home():
 # New Google Sheet
 @app.route("/add_spreadsheet", methods=["GET", "POST"])
 def add_spreadsheet():
-    success,failure = False,False
+    success, failure = False, False
     spending_collumn = []
     spending_row = []
 
+    # Pulls the last preview from the temporary store to show on the page if it exists
+    preview = IMPORT_STORE.get("last_preview", {})
+    if preview:
+        spending_collumn = preview.get("spending_collumn", [])
+        spending_row = preview.get("spending_row", [])
+        success = preview.get("success", False)
 
     # Pulls the URL from the form to be used in sheet_import()
     if request.method == "POST":
         sheet_url = request.form["url"]
         try:
             spending_collumn,spending_row,incoming_merchants=sheet_import(sheet_url)
+            
+            # Save the last preview data in the temporary store for display on the page
+            IMPORT_STORE["last_preview"] = {
+                "spending_collumn": spending_collumn,
+                "spending_row": spending_row,
+                "success": True
+            }
+
+            # Save the incoming merchants and spending data in a temporary store for merchant review
+            import_id = str(uuid.uuid4())
+            IMPORT_STORE[import_id] = {
+                "incoming_merchants": incoming_merchants,
+                "spending_collumn": spending_collumn,
+                "spending_row": spending_row
+            }
+
+            # Redirect to the merchant review page with the import ID
             success = True
+            return redirect(url_for("import_merchants", import_id=import_id))
+        
         except Exception as e:
             print("Error:", e)
             failure = True
 
-    # Tells the site if success or failure
+    # Start 'er up
     return render_template(
         "add_spreadsheet.html",
         spending_collumn=spending_collumn,
@@ -42,18 +72,31 @@ def add_spreadsheet():
     )
 
 # Check incoming merchants before updating the Merchant table
-@app.route('/import_merchants', methods=["GET", "POST"])
-def import_merchants(incoming_merchants=[]):
+@app.route('/import_merchants/<import_id>', methods=["GET", "POST"])
+def import_merchants(import_id):
     success = False
     failure = False
 
-    # Takes the input of the dropdowns
+    # Pull the import data from the temporary store using the import ID
+    import_data = IMPORT_STORE.get(import_id)
+    if not import_data:
+        return "Import session expired or invalid", 404
+    incoming_merchants = import_data["incoming_merchants"]
+
+    # Takes the input of the dropdowns and updates the Merchant table, then updates the Spending table with the new categories
     if request.method == "POST":
         try:
             for merchant, category in request.form.items():
                 update_merchant(merchant, category)
             update_spending_categories()
+
+            # Remove the import data from the temporary store after processing
+            IMPORT_STORE.pop(import_id, None)
+
             success = True
+            # Go back to the add_spreadsheet page with a success message
+            return redirect(url_for("add_spreadsheet", imported="1"))
+        
         except Exception as e:
             print("Error:", e)
             failure = True

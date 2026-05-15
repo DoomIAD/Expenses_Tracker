@@ -27,15 +27,16 @@ def url_fixer(sheets_url_bad):
 
     return sheets_url_good
 
-def merchant_checker(unique_merchants):
+def new_merchants_review(unique_merchants):
     missing_merchants=merchant_checker(unique_merchants)
     new_merchants = []
+    print_table("merchants")
     for i in missing_merchants:
         try:
             category = categorize_merchant(i)
             new_merchants.append((i, category))
-        except:
-            print("Error for item:",i)
+        except Exception as e:
+            print("Error for item:", i, "->", e)
 
     return new_merchants
 
@@ -50,7 +51,8 @@ def sheet_import(sheets_url):
     df = pd.read_csv(sheets_url)
 
     # Fix data types and clean data
-    df['Date'] = pd.to_datetime(df['Date']).dt.date
+    df['Date'] = df['Date'].astype(str).str.strip()
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce', format='mixed')
     df['Amount'] = df['Amount'].str.replace(',', '').astype(float)
     df['Merchant'] = (
         df['Merchant']
@@ -62,11 +64,11 @@ def sheet_import(sheets_url):
 
     # Seperate data to only read expenses
     filter_ = df['Amount'] < 0
-    expense_df = df[filter_]   
+    expense_df = df.loc[filter_].copy()
 
     # Categorize expenses of new items and add to the Merchant DB if not already existing
     unique_merchants = expense_df["Merchant"].unique()
-    incoming_merchants = merchant_checker(unique_merchants)
+    incoming_merchants = new_merchants_review(unique_merchants)
     
     # Exports the Dataframe as a list
     columns = expense_df.columns.tolist()
