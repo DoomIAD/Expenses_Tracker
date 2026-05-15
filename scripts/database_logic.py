@@ -85,6 +85,7 @@ def insert_merchant(name,category):
       INSERT INTO merchants (name, category) VALUES (%s, %s)
     """
     val = (name, category)
+    print(f"Inserting merchant: {name} with category: {category} ||| insert_merchant()")
     cursor.execute(sql, val)
 
     Expenses_Tracker_DB.commit()

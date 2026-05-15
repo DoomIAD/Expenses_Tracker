@@ -31,9 +31,11 @@ def new_merchants_review(unique_merchants):
     missing_merchants=merchant_checker(unique_merchants)
     new_merchants = []
     print_table("merchants")
+    print(f"\nMissing merchants found in the sheet:\n{missing_merchants}")
     for i in missing_merchants:
         try:
-            category = categorize_merchant(i)
+            # category = categorize_merchant(i)
+            category = "other" # Skip over API to save time during tests
             new_merchants.append((i, category))
         except Exception as e:
             print("Error for item:", i, "->", e)

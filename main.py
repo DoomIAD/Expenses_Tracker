@@ -25,6 +25,7 @@ def add_spreadsheet():
     success, failure = False, False
     spending_collumn = []
     spending_row = []
+    checked=False
 
     # Pulls the last preview from the temporary store to show on the page if it exists
     preview = IMPORT_STORE.get("last_preview", {})
@@ -36,31 +37,40 @@ def add_spreadsheet():
     # Pulls the URL from the form to be used in sheet_import()
     if request.method == "POST":
         sheet_url = request.form["url"]
-        try:
-            spending_collumn,spending_row,incoming_merchants=sheet_import(sheet_url)
+        checked = request.form.get("checked") == "true"
+        if checked==False:
+            try:
+                spending_collumn,spending_row,incoming_merchants=sheet_import(sheet_url)
+                
+                # Save the last preview data in the temporary store for display on the page
+                IMPORT_STORE["last_preview"] = {
+                    "spending_collumn": spending_collumn,
+                    "spending_row": spending_row,
+                    "success": True,
+                    "checked" : False,
+                }
+
+                # Save the incoming merchants and spending data in a temporary store for merchant review
+                import_id = str(uuid.uuid4())
+                IMPORT_STORE[import_id] = {
+                    "incoming_merchants": incoming_merchants,
+                    "spending_collumn": spending_collumn,
+                    "spending_row": spending_row,
+                    "checked" : False,
+                }
+
+                success = True
+
+                # Redirect to the merchant if new merchants are found
+                if len(incoming_merchants) > 0:
+                    return redirect(url_for("import_merchants", import_id=import_id))
             
-            # Save the last preview data in the temporary store for display on the page
-            IMPORT_STORE["last_preview"] = {
-                "spending_collumn": spending_collumn,
-                "spending_row": spending_row,
-                "success": True
-            }
-
-            # Save the incoming merchants and spending data in a temporary store for merchant review
-            import_id = str(uuid.uuid4())
-            IMPORT_STORE[import_id] = {
-                "incoming_merchants": incoming_merchants,
-                "spending_collumn": spending_collumn,
-                "spending_row": spending_row
-            }
-
-            # Redirect to the merchant review page with the import ID
-            success = True
-            return redirect(url_for("import_merchants", import_id=import_id))
-        
-        except Exception as e:
-            print("Error:", e)
-            failure = True
+            except Exception as e:
+                print(f"Error:{e} during sheet import")
+                failure = True
+        else:
+            IMPORT_STORE.clear()
+            return redirect(url_for("home"))
 
     # Start 'er up
     return render_template(
@@ -87,7 +97,8 @@ def import_merchants(import_id):
     if request.method == "POST":
         try:
             for merchant, category in request.form.items():
-                update_merchant(merchant, category)
+                print(f"Adding merchant: {merchant} to category: {category}")
+                insert_merchant(merchant, category)
             update_spending_categories()
 
             # Remove the import data from the temporary store after processing
@@ -95,10 +106,11 @@ def import_merchants(import_id):
 
             success = True
             # Go back to the add_spreadsheet page with a success message
+            IMPORT_STORE[import_id]["checked"] = True
             return redirect(url_for("add_spreadsheet", imported="1"))
         
         except Exception as e:
-            print("Error:", e)
+            print(f"Error: {e} on merchant: {merchant} with category: {category} ||| import_merchants()")
             failure = True
 
     
@@ -126,7 +138,7 @@ def edit_merchants():
             update_spending_categories()
             success = True
         except Exception as e:
-            print("Error:", e)
+            print(f"Error: {e} on merchant: {merchant} with category: {category}")
             failure = True
 
 
