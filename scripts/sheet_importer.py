@@ -34,8 +34,8 @@ def new_merchants_review(unique_merchants):
     print(f"\nMissing merchants found in the sheet:\n{missing_merchants}")
     for i in missing_merchants:
         try:
-            # category = categorize_merchant(i)
-            category = "other" # Skip over API to save time during tests
+            category = categorize_merchant(i)
+            # category = "other" # Skip over API to save time during tests
             new_merchants.append((i, category))
         except Exception as e:
             print("Error for item:", i, "->", e)
@@ -84,4 +84,4 @@ def sheet_import(sheets_url):
         print(" | ".join(str(value) for value in row))
 
     # Returns the incoming items for approval
-    return columns,rows,incoming_merchants
+    return columns,rows,incoming_merchants, expense_df

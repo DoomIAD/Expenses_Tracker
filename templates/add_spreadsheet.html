@@ -146,27 +146,42 @@ TODO
           id="url"
           name="url"
           placeholder="https://docs.google.com/spreadsheets/xxxxxxxx"
-          required
         >
       </div>
 
       <!--The basic buttons-->
       <div class="button-row">
-        <button class="primary-btn" type="submit">
+
+        <!-- Main submit button -->
+        <button class="primary-btn"
+                type="submit"
+                name="action"
+                value="import"
+                {% if spending_row %}style="display:none;"{% endif %}> <!-- Disapears when ready to apply changes-->
           Submit
         </button>
 
-        <button class="secondary-btn" type="button" onclick="goBack()">
-          Cancel
-        </button>   
-      </div>
+        <!-- Apply button after successful import -->
+        {% if spending_row %}
+          <button class="primary-btn"
+                  type="submit"
+                  name="action"
+                  value="apply">
+            Apply
+          </button>
 
-      <!--Text appears if sheet_import() was a success-->
-      <p id="success"
-        style="display: {% if success %}block{% else %}none{% endif %};
-                color: green;">
-        Spreadsheet imported successfully!
-      </p>
+        {% else %}
+
+          <!-- Normal cancel button -->
+          <button type="button"
+                  class="secondary-btn"
+                  onclick="goBack()">
+            Cancel
+          </button>
+
+        {% endif %}
+
+      </div>
 
       <!--Text appears if failed-->
       <p id="failure"
@@ -174,32 +189,47 @@ TODO
                 color: red;">
         Failed to import spreadsheet!
       </p>
-
+    </form>
 
       
       <!--The chart of imported shheets-->
       <table id="success" class="table"
-       style="display: {% if success %}block{% else %}none{% endif %};">
+       style="display:{% if spending_row %}table{% else %}none{% endif %};">
       <thead>
         <tr>
           {% for col in spending_collumn %}
             <th>{{ col }}</th>
           {% endfor %}
+          <th>Actions</th>
         </tr>
       </thead>
 
       <tbody>
-        {% for row in spending_row %}
+        {% for i in range(spending_row|length) %}
           <tr>
-            {% for value in row %}
+
+            {% for value in spending_row[i] %}
               <td>{{ value }}</td>
             {% endfor %}
+
+            <!-- Remove button -->
+            <td>
+              <form method="POST"
+                    action="{{ url_for('remove_spending_row', index=i) }}"
+                    style="margin:0;">
+                <button type="submit"
+                        class="secondary-btn"
+                        style="background:#ef4444;color:white;">
+                  Remove
+                </button>
+              </form>
+            </td>
+
           </tr>
         {% endfor %}
       </tbody>
     </table>
 
-    </form>
   </main>
 
   <script>

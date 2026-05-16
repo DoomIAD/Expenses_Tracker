@@ -57,7 +57,7 @@ def Create_Spending_Table():
         id INT AUTO_INCREMENT PRIMARY KEY,
         card_number VARCHAR(255),
         date DATE,
-        amount FLOAT,
+        amount DECIMAL(10,2),
         merchant VARCHAR(255),
         category VARCHAR(255),
 
@@ -183,9 +183,10 @@ def insert_spending(expense_df):
 
     # Insert query
     insert_query = """
-        INSERT IGNORE INTO spending
+        INSERT INTO spending
         (card_number, date, amount, merchant, category)
         VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE id = id
     """
 
     # Prepare data
@@ -202,6 +203,8 @@ def insert_spending(expense_df):
 
     # Execute batch insert
     cursor.executemany(insert_query, data)
+
+    print(f"Inserted {cursor.rowcount} rows into spending table.")
 
     # Commit + cleanup
     Expenses_Tracker_DB.commit()

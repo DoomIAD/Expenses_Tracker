@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import uuid
+import pandas as pd
 
 # Lets me store and use data between routes
 IMPORT_STORE = {}
@@ -22,57 +23,76 @@ def home():
 # New Google Sheet
 @app.route("/add_spreadsheet", methods=["GET", "POST"])
 def add_spreadsheet():
-    success, failure = False, False
+    # Initialize variables for template rendering
+    success = request.args.get("success") == "1"
+    failure = False
     spending_collumn = []
     spending_row = []
-    checked=False
+    checked = False
 
-    # Pulls the last preview from the temporary store to show on the page if it exists
+    # Pulls the last preview from the temporary store
     preview = IMPORT_STORE.get("last_preview", {})
     if preview:
         spending_collumn = preview.get("spending_collumn", [])
         spending_row = preview.get("spending_row", [])
-        success = preview.get("success", False)
 
-    # Pulls the URL from the form to be used in sheet_import()
     if request.method == "POST":
-        sheet_url = request.form["url"]
-        checked = request.form.get("checked") == "true"
-        if checked==False:
+        sheet_url = request.form.get("url", "")
+
+        # Uses action to determine current step of the import process
+        action = request.form.get("action", "import")
+        if action == "import":
+            sheet_url = request.form.get("url", "")
             try:
-                spending_collumn,spending_row,incoming_merchants=sheet_import(sheet_url)
-                
-                # Save the last preview data in the temporary store for display on the page
+                spending_collumn, spending_row, incoming_merchants, expense_df = sheet_import(sheet_url)
+
+                # Save preview
                 IMPORT_STORE["last_preview"] = {
                     "spending_collumn": spending_collumn,
                     "spending_row": spending_row,
+                    "expense_df": expense_df,
                     "success": True,
-                    "checked" : False,
+                    "checked": False,
                 }
 
-                # Save the incoming merchants and spending data in a temporary store for merchant review
+                # Save the current import session data with a unique ID
                 import_id = str(uuid.uuid4())
                 IMPORT_STORE[import_id] = {
                     "incoming_merchants": incoming_merchants,
                     "spending_collumn": spending_collumn,
                     "spending_row": spending_row,
-                    "checked" : False,
+                    "expense_df": expense_df,
+                    "checked": False,
                 }
-
                 success = True
 
-                # Redirect to the merchant if new merchants are found
+                # Skips merchant review if there are no new merchants to review, otherwise goes to merchant review page
                 if len(incoming_merchants) > 0:
                     return redirect(url_for("import_merchants", import_id=import_id))
-            
+                else:
+                    IMPORT_STORE[import_id]["checked"] = True
+                    IMPORT_STORE["last_preview"]["checked"] = True
+
             except Exception as e:
                 print(f"Error:{e} during sheet import")
                 failure = True
-        else:
-            IMPORT_STORE.clear()
-            return redirect(url_for("home"))
 
-    # Start 'er up
+        # If the user has already imported and reviewed merchants, apply the changes to the database
+        else:
+            preview = IMPORT_STORE.get("last_preview", {})
+
+            spending_row = preview.get("spending_row", [])
+            spending_collumn = preview.get("spending_collumn", [])
+            expense_df = pd.DataFrame(spending_row, columns=spending_collumn)
+            insert_spending(expense_df)
+            update_spending_categories()
+            print_table("spending")
+
+            # Wipe for next import 
+            IMPORT_STORE.clear()
+            return redirect(url_for("add_spreadsheet", success=1))
+
+    # Starts 'er up
     return render_template(
         "add_spreadsheet.html",
         spending_collumn=spending_collumn,
@@ -80,6 +100,31 @@ def add_spreadsheet():
         success=success,
         failure=failure
     )
+
+# Removes rows from the add_spreadsheet table
+@app.route("/remove_spending_row/<int:index>", methods=["POST"])
+def remove_spending_row(index):
+    preview = IMPORT_STORE.get("last_preview")
+
+    if not preview:
+        return redirect(url_for("add_spreadsheet"))
+
+    rows = preview.get("spending_row", [])
+
+    if 0 <= index < len(rows):
+        rows.pop(index)
+
+        # Update preview
+        preview["spending_row"] = rows
+        IMPORT_STORE["last_preview"] = preview
+
+        # Updates any active import session with the new rows
+        for key, value in IMPORT_STORE.items():
+            if isinstance(value, dict):
+                if value.get("spending_row") is not None:
+                    value["spending_row"] = rows
+
+    return redirect(url_for("add_spreadsheet"))
 
 # Check incoming merchants before updating the Merchant table
 @app.route('/import_merchants/<import_id>', methods=["GET", "POST"])
@@ -101,13 +146,10 @@ def import_merchants(import_id):
                 insert_merchant(merchant, category)
             update_spending_categories()
 
-            # Remove the import data from the temporary store after processing
-            IMPORT_STORE.pop(import_id, None)
-
             success = True
-            # Go back to the add_spreadsheet page with a success message
-            IMPORT_STORE[import_id]["checked"] = True
-            return redirect(url_for("add_spreadsheet", imported="1"))
+
+            # Go back to the spreadsheet preview page
+            return redirect(url_for("add_spreadsheet"))
         
         except Exception as e:
             print(f"Error: {e} on merchant: {merchant} with category: {category} ||| import_merchants()")
@@ -135,7 +177,6 @@ def edit_merchants():
         try:
             for merchant, category in request.form.items():
                 update_merchant(merchant, category)
-            update_spending_categories()
             success = True
         except Exception as e:
             print(f"Error: {e} on merchant: {merchant} with category: {category}")
