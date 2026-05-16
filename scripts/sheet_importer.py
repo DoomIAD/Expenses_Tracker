@@ -27,6 +27,20 @@ def url_fixer(sheets_url_bad):
 
     return sheets_url_good
 
+def new_merchants_review(unique_merchants):
+    missing_merchants=merchant_checker(unique_merchants)
+    new_merchants = []
+    print_table("merchants")
+    print(f"\nMissing merchants found in the sheet:\n{missing_merchants}")
+    for i in missing_merchants:
+        try:
+            category = categorize_merchant(i)
+            # category = "other" # Skip over API to save time during tests
+            new_merchants.append((i, category))
+        except Exception as e:
+            print("Error for item:", i, "->", e)
+
+    return new_merchants
 
 def sheet_import(sheets_url):
     # Create my database if not already existing
@@ -39,7 +53,8 @@ def sheet_import(sheets_url):
     df = pd.read_csv(sheets_url)
 
     # Fix data types and clean data
-    df['Date'] = pd.to_datetime(df['Date']).dt.date
+    df['Date'] = df['Date'].astype(str).str.strip()
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce', format='mixed')
     df['Amount'] = df['Amount'].str.replace(',', '').astype(float)
     df['Merchant'] = (
         df['Merchant']
@@ -51,32 +66,22 @@ def sheet_import(sheets_url):
 
     # Seperate data to only read expenses
     filter_ = df['Amount'] < 0
-    expense_df = df[filter_]
+    expense_df = df.loc[filter_].copy()
 
-    columns = expense_df.columns.tolist()
-    rows = expense_df.values.tolist()    
-
-    # Add to the Spending DB
-    insert_spending(expense_df)    
-
-    # Categorize expenses
+    # Categorize expenses of new items and add to the Merchant DB if not already existing
     unique_merchants = expense_df["Merchant"].unique()
-    missing_merchants=merchant_checker(unique_merchants)
-
-    for i in missing_merchants:
-        try:
-            category = categorize_merchant(i)
-            insert_merchant(i,category)
-        except:
-            print("Error for item:",i)
-
-    update_spending_categories()
+    incoming_merchants = new_merchants_review(unique_merchants)
+    
+    # Exports the Dataframe as a list
+    columns = expense_df.columns.tolist()
+    rows = expense_df.values.tolist()   
 
     # Prints added table items to console for Debugging
+    print("\nIncoming table items:\n")
     print(" | ".join(columns))
     print("-" * 50)
     for row in rows:
         print(" | ".join(str(value) for value in row))
 
-    # Returns the addded items
-    return columns,rows
+    # Returns the incoming items for approval
+    return columns,rows,incoming_merchants, expense_df

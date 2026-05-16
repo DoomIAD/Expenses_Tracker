@@ -24,6 +24,7 @@ def extract_json(text: str):
     return json.loads(match.group(0))
 
 def categorize_merchant(name: str) -> str:
+    print(f"Categorizing merchant: {name}")
     response = requests.post(
         url="https://openrouter.ai/api/v1/chat/completions",
         headers={
@@ -71,4 +72,6 @@ def categorize_merchant(name: str) -> str:
     content = content.strip().replace("```json", "").replace("```", "")
 
     data = extract_json(content)
-    return data["category"].strip().lower()
+    fixed_category = data["category"].strip().lower()
+    print(f"Output: {name}: {fixed_category}")
+    return fixed_category

@@ -1,5 +1,5 @@
 import mysql.connector
-from scripts.private_keys import db_user,db_password
+from scripts.private_keys import db_user,db_password, db_port
 import pandas as pd
 
 #=========================================================================
@@ -8,7 +8,7 @@ import pandas as pd
 def Create_DB():
     mydb = mysql.connector.connect(
         host="localhost",
-        port=8013,
+        port=db_port,
         user=db_user,
         password=db_password
     )
@@ -24,7 +24,7 @@ def Create_DB():
 def connect_db(db=None):
     return mysql.connector.connect(
           host="localhost",
-          port=8013,
+          port=db_port,
           user=db_user,
           password=db_password,
           database=db
@@ -57,7 +57,7 @@ def Create_Spending_Table():
         id INT AUTO_INCREMENT PRIMARY KEY,
         card_number VARCHAR(255),
         date DATE,
-        amount FLOAT,
+        amount DECIMAL(10,2),
         merchant VARCHAR(255),
         category VARCHAR(255),
 
@@ -85,6 +85,7 @@ def insert_merchant(name,category):
       INSERT INTO merchants (name, category) VALUES (%s, %s)
     """
     val = (name, category)
+    print(f"Inserting merchant: {name} with category: {category} ||| insert_merchant()")
     cursor.execute(sql, val)
 
     Expenses_Tracker_DB.commit()
@@ -105,11 +106,15 @@ def merchant_checker(merchant_list):
       existing_merchants = {
             row[0].strip().lower() for row in myresult if row[0] is not None
         }
+      
+      print(f"Existing merchants: {existing_merchants}")
 
       missing_merchants = [
             m for m in merchant_list
             if m.strip().lower() not in existing_merchants
       ]
+
+      print(f"Missing merchants: {missing_merchants}")
 
       cursor.close()
       Expenses_Tracker_DB.close()
@@ -178,9 +183,10 @@ def insert_spending(expense_df):
 
     # Insert query
     insert_query = """
-        INSERT IGNORE INTO spending
+        INSERT INTO spending
         (card_number, date, amount, merchant, category)
         VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE id = id
     """
 
     # Prepare data
@@ -197,6 +203,8 @@ def insert_spending(expense_df):
 
     # Execute batch insert
     cursor.executemany(insert_query, data)
+
+    print(f"Inserted {cursor.rowcount} rows into spending table.")
 
     # Commit + cleanup
     Expenses_Tracker_DB.commit()
